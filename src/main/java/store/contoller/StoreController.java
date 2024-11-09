@@ -1,22 +1,18 @@
 package store.contoller;
 
+import store.model.Item;
 import store.model.Product;
-import store.model.Promotion;
+import store.model.ProductLoader;
 import store.view.InputView;
 import store.view.OutputView;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 
 public class StoreController {
-    private static final Map<String, Product> productMap = new HashMap<>();
+    private static Map<String, Product> productMap = new HashMap<>();
 
     public StoreController() {
-        initProducts();
+        ProductLoader.initProducts(productMap);
     }
 
     public void run() {
@@ -31,42 +27,28 @@ public class StoreController {
     private void getCustomer() {
         OutputView.welcomeStore();
         printProducts();
-    }
-
-    public void initProducts() {
-        String productsPath = "src/main/resources/products.md";
-
-        try (BufferedReader br = Files.newBufferedReader(Paths.get(productsPath))) {
-            br.readLine();
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] values = line.split(",");
-                String name = values[0];
-                int price = Integer.parseInt(values[1]);
-                int quantity = Integer.parseInt(values[2]);
-                Promotion promotion = Promotion.fromString(values[3]);
-                if (!productMap.containsKey(name) && promotion != Promotion.NULL) {
-                    Product product = new Product(name, price, 0, promotion.getName());
-                    product.setPromotionQuantity(quantity);
-                    productMap.put(name, product);
-                }
-                if (productMap.containsKey(name) && promotion == Promotion.NULL) {
-                    Product product = productMap.get(name);
-                    product.setQuantity(quantity);
-                }
-                if (!productMap.containsKey(name) && promotion == Promotion.NULL) {
-                    Product product = new Product(name, price, quantity, promotion.getName());
-                    productMap.put(name, product);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        parseItems();
     }
 
     public void printProducts() {
         for (Product p : productMap.values()) {
             System.out.println(p);
         }
+    }
+
+    public static List<Item> parseItems() {
+        List<Item> items = new ArrayList<>();
+        String input = InputView.readItem();
+        String cleanedInput = input.replaceAll("[\\[\\]]", "");
+        String[] itemStrings = cleanedInput.split(",");
+
+        for (String itemString : itemStrings) {
+            String[] parts = itemString.split("-"); // '-'를 기준으로 분리
+            String name = parts[0];
+            int quantity = Integer.parseInt(parts[1]);
+            items.add(new Item(name, quantity));
+        }
+
+        return items;
     }
 }
