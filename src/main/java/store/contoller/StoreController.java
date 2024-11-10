@@ -1,5 +1,6 @@
 package store.contoller;
 
+import store.Utils;
 import store.model.*;
 import store.validator.InputValidator;
 import store.view.InputView;
@@ -47,36 +48,13 @@ public class StoreController {
 
     public static void parseItems() {
         String item = readItemInput();
-        String cleanedInput = cleanInput(item);
-        List<Item> items = parseItemListFromInput(cleanedInput);
+        String cleanedInput = Utils.removeBrackets(item);
+        List<Item> items = Utils.parseItems(cleanedInput);
         productMatcher(items);
     }
-    // 1. 아이템 입력을 처리하는 메서드
+
     private static String readItemInput() {
         return InputView.readItem();
-    }
-
-    // 2. 아이템 문자열을 정리하는 메서드
-    private static String cleanInput(String input) {
-        return input.replaceAll("[\\[\\]]", "");
-    }
-
-    // 3. 아이템 문자열을 파싱하는 메서드
-    private static List<Item> parseItemListFromInput(String input) {
-        List<Item> items = new ArrayList<>();
-        String[] itemStrings = input.split(",");
-
-        for (String itemString : itemStrings) {
-            String[] parts = itemString.split("-");
-
-            InputValidator.validateItemFormat(parts);
-
-            String name = parts[0];
-            int quantity = Integer.parseInt(parts[1]);
-            items.add(new Item(name, quantity));
-        }
-
-        return items;
     }
 
     public static void productMatcher(List<Item> items) {
