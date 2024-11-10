@@ -1,7 +1,7 @@
 package store.view;
 
 import camp.nextstep.edu.missionutils.Console;
-import store.Message.ViewMessage;
+import store.message.ViewMessage;
 
 public class InputView {
     public static String readItem() {
@@ -22,6 +22,12 @@ public class InputView {
 
     public static boolean askAdditionalItem(String name){
         System.out.printf(ViewMessage.ASK_ADDITIONAL_ITEM.format(name));
+        String input = Console.readLine();
+        return input.equals("Y") || input.equals("y");
+    }
+
+    public static boolean NON_DISCOUNTED_ITEM(String name, int quantity) {
+        System.out.printf(ViewMessage.NON_DISCOUNTED_ITEM.format(name, quantity));
         String input = Console.readLine();
         return input.equals("Y") || input.equals("y");
     }

@@ -1,6 +1,6 @@
 package store.view;
 
-import store.Message.ViewMessage;
+import store.message.ViewMessage;
 
 public class OutputView {
     public static void welcomeStore(){
