@@ -153,6 +153,8 @@ public class StoreController {
             membershipDiscountPrice = calculateMembershipDiscount(nonPromotionTotalPrice);
             totalAmount -= membershipDiscountPrice;
         }
+
+        printReceipt(items, discountPerItem, freeItems, membershipDiscountPrice, totalAmount);
     }
 
     // 프로모션 재고 부족 시, 일부 수량을 프로모션 없이 결제할지 여부를 확인하는 메서드
@@ -169,5 +171,38 @@ public class StoreController {
     private static int calculateMembershipDiscount(int totalAmount) {
         int membershipDiscount = (int) (totalAmount * 0.3);
         return Math.min(membershipDiscount, 8000);
+    }
+
+    private static void printReceipt(List<Item> items, Map<String, Item> discountPerItem, Map<String, Item> freeItems, int membershipDiscountPrice, int totalAmount) {
+        NumberFormat currencyFormat = NumberFormat.getInstance(Locale.KOREA);
+        int totalPromotionDiscount = 0;
+        int totalPurchasePrice = 0;
+
+        System.out.println("=============W 편의점================");
+        System.out.println("상품명\t\t수량\t\t금액");
+
+        // 각 구매 항목 출력
+        for (Item item : discountPerItem.values()) {
+            totalPurchasePrice += item.getPrice();
+            System.out.printf("%s\t\t\t%d\t\t%s\n", item.getName(), item.getQuantity(), currencyFormat.format(item.getPrice()));
+        }
+
+        // 증정 품목 출력
+        System.out.println("=============증    정================");
+        for (Item item : freeItems.values()) {
+            String itemName = item.getName();
+            int freeQuantity = item.getQuantity();
+            totalPromotionDiscount += freeQuantity * item.getPrice();
+            if (freeQuantity > 0) {
+                System.out.printf("%s\t\t\t%d개 증정\n", itemName, freeQuantity);
+            }
+        }
+        System.out.println("====================================");
+
+        // 총 구매액 및 할인 정보 출력
+        System.out.printf("총구매액\t\t\t\t%s\n", currencyFormat.format(totalPurchasePrice));
+        System.out.printf("행사할인\t\t\t\t-%s\n",currencyFormat.format(totalPromotionDiscount));
+        System.out.printf("멤버십할인\t\t\t\t-%s\n", currencyFormat.format(membershipDiscountPrice));
+        System.out.printf("내실돈\t\t\t\t%s\n", currencyFormat.format(totalAmount));
     }
 }
