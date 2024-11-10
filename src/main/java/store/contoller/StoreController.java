@@ -103,14 +103,13 @@ public class StoreController {
             int itemTotalAmount = 0;
 
             if(promotion != Promotion.NULL && promotion.isAvailable(today) && promotionQuantity > 0){
-                int promoApplicableCount = Math.min(itemQuantity, promotionQuantity); // 재고 차감 수
-                int remainingRequest = itemQuantity - promoApplicableCount; // 일반 재고 차감 수
-                int freeQuantity = (promotion.getBuy() + promotion.getGet()); // 증정 받는 수
-                int freeItemCount = (promoApplicableCount / freeQuantity); // 무료 증정된 수량
+                int promoApplicableCount = Math.min(itemQuantity, promotionQuantity);
+                int remainingRequest = itemQuantity - promoApplicableCount;
+                int freeQuantity = (promotion.getBuy() + promotion.getGet());
+                int freeItemCount = (promoApplicableCount / freeQuantity);
                 int nowPromotionImpossible = (promotionQuantity / freeQuantity) * freeQuantity;
 
                 if(itemQuantity < promotionQuantity) {
-                    // 고객이 더 추가할 수 있는 혜택이 있는지 확인
                     int additionalNeeded = itemQuantity % freeQuantity;
                     if (additionalNeeded == promotion.getBuy()) {
                         boolean wantsAdditional = InputView.askAdditionalItem(productName);
@@ -126,11 +125,9 @@ public class StoreController {
                     handlePromotionStockShortage(product, itemQuantity, nowPromotionImpossible);
                 }
 
-                // 프로모션 재고 차감 및 일반 재고 차감
                 product.setPromotionQuantity(promotionQuantity - promoApplicableCount);
                 product.setQuantity(quantity - remainingRequest);
 
-                // 할인 적용 및 무료 증정 품목 추가
                 itemTotalAmount += promoApplicableCount * product.getPrice();
                 itemTotalAmount += remainingRequest * product.getPrice();
                 totalAmount += itemTotalAmount;
@@ -138,8 +135,7 @@ public class StoreController {
                 freeItems.put(productName, new Item(productName, freeItemCount, product.getPrice()));
             }
 
-            // 프로모션이 없는 경우: 일반 재고에서 차감
-            if (promotion == Promotion.NULL && product.getQuantity() >= itemQuantity) {
+            if (promotion == Promotion.NULL && product.getQuantity() >= itemQuantity || !promotion.isAvailable(today)) {
                 product.setQuantity(product.getQuantity() - itemQuantity);
                 itemTotalAmount += itemQuantity * product.getPrice();
                 nonPromotionTotalPrice = itemTotalAmount;
@@ -157,7 +153,6 @@ public class StoreController {
         printReceipt(items, discountPerItem, freeItems, membershipDiscountPrice, totalAmount);
     }
 
-    // 프로모션 재고 부족 시, 일부 수량을 프로모션 없이 결제할지 여부를 확인하는 메서드
     private static void handlePromotionStockShortage(Product product, int itemQuantity, int nowPromotionImpossible) {
         if (product.getPromotionQuantity() <= itemQuantity) {
             int remainingQuantity = itemQuantity - nowPromotionImpossible;
