@@ -2,11 +2,9 @@ package store.contoller;
 
 import store.Utils;
 import store.model.*;
-import store.validator.InputValidator;
 import store.view.InputView;
 import store.view.OutputView;
 
-import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -14,7 +12,9 @@ import camp.nextstep.edu.missionutils.DateTimes;
 
 public class StoreController {
     private static final Map<String, Product> productMap = new LinkedHashMap<>();
-
+    private static final StockManager stockManager = new StockManager();
+    private static final MembershipDiscount membershipDiscount = new MembershipDiscount();
+    private static final Receipt receipt = new Receipt();
 
     public StoreController() {
         ProductLoader.initProducts(productMap);
@@ -22,9 +22,9 @@ public class StoreController {
 
     public void run() {
         while (true) {
-            try{
-                getCustomer();
-            } catch (IllegalArgumentException e){
+            try {
+                handleCustomerInteraction();
+            } catch (IllegalArgumentException e) {
                 System.out.println(e.getMessage());
                 continue;
             }
@@ -34,148 +34,62 @@ public class StoreController {
         }
     }
 
-    private void getCustomer() {
+    private void handleCustomerInteraction() {
         OutputView.welcomeStore();
         printProducts();
         parseItems();
     }
 
     public void printProducts() {
-        for (Product p : productMap.values()) {
-            System.out.println(p);
-        }
+        productMap.values().forEach(System.out::println);
     }
 
     public static void parseItems() {
         String item = readItemInput();
-        String cleanedInput = Utils.removeBrackets(item);
-        List<Item> items = Utils.parseItems(cleanedInput);
-        productMatcher(items);
+        List<PurchaseItem> purchaseItems = processItemInput(item);
+        processItems(purchaseItems);
     }
 
     private static String readItemInput() {
         return InputView.readItem();
     }
 
-    public static void productMatcher(List<Item> items) {
+    private static List<PurchaseItem> processItemInput(String item) {
+        String cleanedItem = Utils.removeBrackets(item);
+        return Utils.parseItems(cleanedItem);
+    }
+
+    public static void processItems(List<PurchaseItem> purchaseItems) {
         LocalDate today = LocalDate.from(DateTimes.now());
-        int totalAmount = 0; // 지불 할 금액
-        int nonPromotionTotalPrice = 0; // 프로모션 미적용 금액
-        int membershipDiscountPrice = 0; // 멤버쉽 할인 금액
-        Map<String, Item> discountPerItem = new HashMap<>();
-        Map<String, Item> freeItems = new HashMap<>();
+        Map<String, PurchaseItem> purchase = new HashMap<>();
+        Map<String, PurchaseItem> freeItems = new HashMap<>();
+        int totalPrice = 0;
+        int nonPromotionTotalPrice = 0;
 
-        for (Item item : items) {
-            System.out.println();
-            String productName = item.getName();
-            Product product = productMap.get(productName);
-
-            InputValidator.validateProductExists(product);
-            InputValidator.validateStockQuantity(item.getQuantity(), product.getTotalQuantity());
-
-            int itemQuantity = item.getQuantity();
-            Promotion promotion = product.getPromotion();
-            int promotionQuantity = product.getPromotionQuantity();
-            int quantity = product.getQuantity();
-
-            int itemTotalAmount = 0;
-
-            if(promotion != Promotion.NULL && promotion.isAvailable(today) && promotionQuantity > 0){
-                int promoApplicableCount = Math.min(itemQuantity, promotionQuantity);
-                int remainingRequest = itemQuantity - promoApplicableCount;
-                int freeQuantity = (promotion.getBuy() + promotion.getGet());
-                int freeItemCount = (promoApplicableCount / freeQuantity);
-                int nowPromotionImpossible = (promotionQuantity / freeQuantity) * freeQuantity;
-
-                if(itemQuantity < promotionQuantity) {
-                    int additionalNeeded = itemQuantity % freeQuantity;
-                    if (additionalNeeded == promotion.getBuy()) {
-                        boolean wantsAdditional = InputView.askAdditionalItem(productName);
-                        if (wantsAdditional) {
-                            itemQuantity += 1;
-                            promoApplicableCount = itemQuantity;
-                            freeItemCount = promoApplicableCount / freeQuantity;
-                            item.setQuantity(itemQuantity);
-                        }
-                    }
-                }
-                if(itemQuantity > promotionQuantity){
-                    handlePromotionStockShortage(product, itemQuantity, nowPromotionImpossible);
-                }
-
-                product.setPromotionQuantity(promotionQuantity - promoApplicableCount);
-                product.setQuantity(quantity - remainingRequest);
-
-                itemTotalAmount += promoApplicableCount * product.getPrice();
-                itemTotalAmount += remainingRequest * product.getPrice();
-                totalAmount += itemTotalAmount;
-
-                freeItems.put(productName, new Item(productName, freeItemCount, product.getPrice()));
-            }
-
-            if (promotion == Promotion.NULL && product.getQuantity() >= itemQuantity || !promotion.isAvailable(today)) {
-                product.setQuantity(product.getQuantity() - itemQuantity);
-                itemTotalAmount += itemQuantity * product.getPrice();
-                nonPromotionTotalPrice = itemTotalAmount;
-                totalAmount += itemTotalAmount;
-            }
-            discountPerItem.put(productName, new Item(productName, itemQuantity, itemTotalAmount));
+        for (PurchaseItem purchaseItem : purchaseItems) {
+            Product product = productMap.get(purchaseItem.getName());
+            int purchaseTotalPrice = processItem(purchaseItem, product, today, freeItems);
+            totalPrice += purchaseTotalPrice;
+            purchase.put(purchaseItem.getName(), new PurchaseItem(purchaseItem.getName(), purchaseItem.getQuantity(), purchaseTotalPrice));
         }
 
-        boolean memberShip = InputView.askMemberShip();
-        if(memberShip){
-            membershipDiscountPrice = calculateMembershipDiscount(nonPromotionTotalPrice);
-            totalAmount -= membershipDiscountPrice;
-        }
-
-        printReceipt(items, discountPerItem, freeItems, membershipDiscountPrice, totalAmount);
+        int membershipDiscountPrice = membershipDiscount.applyMembershipDiscount(nonPromotionTotalPrice);
+        receipt.printReceipt(purchase, freeItems, membershipDiscountPrice, totalPrice);
     }
 
-    private static void handlePromotionStockShortage(Product product, int itemQuantity, int nowPromotionImpossible) {
-        if (product.getPromotionQuantity() <= itemQuantity) {
-            int remainingQuantity = itemQuantity - nowPromotionImpossible;
-            boolean proceed = InputView.NON_DISCOUNTED_ITEM(product.getName(), remainingQuantity);
-            if (!proceed) {
-                throw new IllegalArgumentException();
-            }
-        }
-    }
+    private static int processItem(PurchaseItem purchaseItem, Product product, LocalDate today, Map<String, PurchaseItem> freeItems) {
+        int purchaseTotalPrice;
+        Promotion promotion = product.getPromotion();
 
-    private static int calculateMembershipDiscount(int totalAmount) {
-        int membershipDiscount = (int) (totalAmount * 0.3);
-        return Math.min(membershipDiscount, 8000);
-    }
-
-    private static void printReceipt(List<Item> items, Map<String, Item> discountPerItem, Map<String, Item> freeItems, int membershipDiscountPrice, int totalAmount) {
-        NumberFormat currencyFormat = NumberFormat.getInstance(Locale.KOREA);
-        int totalPromotionDiscount = 0;
-        int totalPurchasePrice = 0;
-
-        System.out.println("=============W 편의점================");
-        System.out.println("상품명\t\t수량\t\t금액");
-
-        // 각 구매 항목 출력
-        for (Item item : discountPerItem.values()) {
-            totalPurchasePrice += item.getPrice();
-            System.out.printf("%s\t\t\t%d\t\t%s\n", item.getName(), item.getQuantity(), currencyFormat.format(item.getPrice()));
+        if (promotion != Promotion.NULL && promotion.isAvailable(today) && product.getPromotionQuantity() > 0) {
+            PromotionHandler promotionHandler = new PromotionHandler(product, purchaseItem);
+            purchaseTotalPrice = promotionHandler.applyPromotion();
+            freeItems.putAll(promotionHandler.getFreeItems());
+            return purchaseTotalPrice;
         }
 
-        // 증정 품목 출력
-        System.out.println("=============증    정================");
-        for (Item item : freeItems.values()) {
-            String itemName = item.getName();
-            int freeQuantity = item.getQuantity();
-            totalPromotionDiscount += freeQuantity * item.getPrice();
-            if (freeQuantity > 0) {
-                System.out.printf("%s\t\t\t%d개 증정\n", itemName, freeQuantity);
-            }
-        }
-        System.out.println("====================================");
-
-        // 총 구매액 및 할인 정보 출력
-        System.out.printf("총구매액\t\t\t\t%s\n", currencyFormat.format(totalPurchasePrice));
-        System.out.printf("행사할인\t\t\t\t-%s\n",currencyFormat.format(totalPromotionDiscount));
-        System.out.printf("멤버십할인\t\t\t\t-%s\n", currencyFormat.format(membershipDiscountPrice));
-        System.out.printf("내실돈\t\t\t\t%s\n", currencyFormat.format(totalAmount));
+        NonPromotionHandler nonPromotionHandler = new NonPromotionHandler(product, purchaseItem);
+        purchaseTotalPrice = nonPromotionHandler.handleNonPromotion();
+        return purchaseTotalPrice;
     }
 }
