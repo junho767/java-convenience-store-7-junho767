@@ -62,7 +62,7 @@ public class PromotionHandler {
     private int adjustForAdditionalItem(int freeItemCount) {
         int additionalNeeded = purchaseItem.getQuantity() % (product.getPromotion().getBuy() + product.getPromotion().getGet());
         if (shouldAskForAdditionalItem(additionalNeeded)) {
-            purchaseItem.setQuantity(purchaseItem.getQuantity()+1);
+            purchaseItem.setQuantity(purchaseItem.getQuantity() + 1);
             return askForAdditionalItem() / (product.getPromotion().getBuy() + product.getPromotion().getGet());
         }
         return freeItemCount;
@@ -74,7 +74,10 @@ public class PromotionHandler {
 
     private int askForAdditionalItem() {
         boolean wantsAdditional = InputView.askAdditionalItem(product.getName());
-        return wantsAdditional ? purchaseItem.getQuantity() + 1 : purchaseItem.getQuantity();
+        if (wantsAdditional) {
+            return purchaseItem.getQuantity() + 1;
+        }
+        return purchaseItem.getQuantity();
     }
 
     private void checkPromotionStock(int nowPromotionImpossible) {
