@@ -14,7 +14,7 @@ public class StoreController {
     private static final Map<String, Product> productMap = new LinkedHashMap<>();
     private static final StockManager stockManager = new StockManager();
     private static final MembershipDiscount membershipDiscount = new MembershipDiscount();
-    private static final Receipt receipt = new Receipt();
+    private static final LocalDate today = LocalDate.from(DateTimes.now());
 
     public StoreController() {
         ProductLoader.initProducts(productMap);
@@ -37,17 +37,18 @@ public class StoreController {
     private void handleCustomerInteraction() {
         OutputView.welcomeStore();
         printProducts();
-        parseItems();
+        Receipt receipt = purchaseItems();
+        receipt.print();
     }
 
     public void printProducts() {
         productMap.values().forEach(System.out::println);
     }
 
-    public static void parseItems() {
+    public static Receipt purchaseItems() {
         String item = readItemInput();
         List<PurchaseItem> purchaseItems = processItemInput(item);
-        processItems(purchaseItems);
+        return processItems(purchaseItems);
     }
 
     private static String readItemInput() {
@@ -59,29 +60,29 @@ public class StoreController {
         return Utils.parseItems(cleanedItem);
     }
 
-    public static void processItems(List<PurchaseItem> purchaseItems) {
-        LocalDate today = LocalDate.from(DateTimes.now());
-        Map<String, PurchaseItem> purchase = new HashMap<>();
-        Map<String, PurchaseItem> freeItems = new HashMap<>();
+    public static Receipt processItems(List<PurchaseItem> purchaseItems) {
+        Map<String, PurchaseItem> purchase = new LinkedHashMap<>();
+        Map<String, PurchaseItem> freeItems = new LinkedHashMap<>();
         int totalPrice = 0;
         int nonPromotionTotalPrice = 0;
 
         for (PurchaseItem purchaseItem : purchaseItems) {
             Product product = productMap.get(purchaseItem.getName());
-            int purchaseTotalPrice = processItem(purchaseItem, product, today, freeItems);
+            int purchaseTotalPrice = processItem(purchaseItem, product, freeItems);
+            nonPromotionTotalPrice += getNonPromotionTotalPrice(product, purchaseTotalPrice);
             totalPrice += purchaseTotalPrice;
             purchase.put(purchaseItem.getName(), new PurchaseItem(purchaseItem.getName(), purchaseItem.getQuantity(), purchaseTotalPrice));
         }
 
         int membershipDiscountPrice = membershipDiscount.applyMembershipDiscount(nonPromotionTotalPrice);
-        receipt.printReceipt(purchase, freeItems, membershipDiscountPrice, totalPrice);
+        return new Receipt(purchase, freeItems, membershipDiscountPrice, totalPrice);
     }
 
-    private static int processItem(PurchaseItem purchaseItem, Product product, LocalDate today, Map<String, PurchaseItem> freeItems) {
+    private static int processItem(PurchaseItem purchaseItem, Product product, Map<String, PurchaseItem> freeItems) {
         int purchaseTotalPrice;
         Promotion promotion = product.getPromotion();
 
-        if (promotion != Promotion.NULL && promotion.isAvailable(today) && product.getPromotionQuantity() > 0) {
+        if (isPromotionAvailable(promotion, product)) {
             PromotionHandler promotionHandler = new PromotionHandler(product, purchaseItem);
             purchaseTotalPrice = promotionHandler.applyPromotion();
             freeItems.putAll(promotionHandler.getFreeItems());
@@ -90,6 +91,17 @@ public class StoreController {
 
         NonPromotionHandler nonPromotionHandler = new NonPromotionHandler(product, purchaseItem);
         purchaseTotalPrice = nonPromotionHandler.handleNonPromotion();
+        return purchaseTotalPrice;
+    }
+
+    private static boolean isPromotionAvailable(Promotion promotion, Product product) {
+        return promotion != Promotion.NULL && promotion.isAvailable(today) && product.getPromotionQuantity() > 0;
+    }
+
+    private static int getNonPromotionTotalPrice(Product product, int purchaseTotalPrice) {
+        if (isPromotionAvailable(product.getPromotion(), product)) {
+            return 0;
+        }
         return purchaseTotalPrice;
     }
 }
