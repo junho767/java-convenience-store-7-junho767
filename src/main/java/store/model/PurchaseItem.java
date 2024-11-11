@@ -1,16 +1,16 @@
 package store.model;
 
-public class Item {
+public class PurchaseItem {
     private final String name;
     private int quantity;
     private int price;
 
-    public Item(String name, int quantity) {
+    public PurchaseItem(String name, int quantity) {
         this.quantity = quantity;
         this.name = name;
     }
 
-    public Item(String name, int quantity, int price) {
+    public PurchaseItem(String name, int quantity, int price) {
         this.name = name;
         this.quantity = quantity;
         this.price = price;

@@ -1,6 +1,6 @@
 package store;
 
-import store.model.Item;
+import store.model.PurchaseItem;
 import store.validator.InputValidator;
 
 import java.util.ArrayList;
@@ -15,23 +15,23 @@ public class Utils {
         return input.replaceAll(BRACKETS_PATTERN, "");
     }
 
-    public static List<Item> parseItems(String input) {
-        List<Item> items = new ArrayList<>();
+    public static List<PurchaseItem> parseItems(String input) {
+        List<PurchaseItem> purchaseItems = new ArrayList<>();
         String[] itemDelimiter = input.split(ITEM_DELIMITER);
 
         for (String item : itemDelimiter) {
-            items.add(parseItem(item));
+            purchaseItems.add(parseItem(item));
         }
 
-        return items;
+        return purchaseItems;
     }
 
-    private static Item parseItem(String itemString) {
+    private static PurchaseItem parseItem(String itemString) {
         String[] parts = itemString.split(PARTS_DELIMITER);
         InputValidator.validateItemFormat(parts);
 
         String name = parts[0];
         int quantity = Integer.parseInt(parts[1]);
-        return new Item(name, quantity);
+        return new PurchaseItem(name, quantity);
     }
 }
