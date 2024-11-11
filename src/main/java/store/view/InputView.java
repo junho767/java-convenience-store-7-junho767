@@ -20,7 +20,7 @@ public class InputView {
         return input.equals("Y") || input.equals("y");
     }
 
-    public static boolean askAdditionalItem(String name){
+    public static boolean askAdditionalItem(String name) {
         System.out.printf(ViewMessage.ASK_ADDITIONAL_ITEM.format(name));
         String input = Console.readLine();
         return input.equals("Y") || input.equals("y");

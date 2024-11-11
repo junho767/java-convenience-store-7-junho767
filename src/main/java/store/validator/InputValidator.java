@@ -18,7 +18,7 @@ public class InputValidator {
 
     public static void validateItemFormat(String[] parts) {
         if (parts.length != 2) {
-           throw new IllegalArgumentException(ErrorMessage.INVALID_INPUT.getMessage());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_INPUT.getMessage());
         }
     }
 }
