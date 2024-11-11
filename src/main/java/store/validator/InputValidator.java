@@ -37,13 +37,13 @@ public class InputValidator {
         }
     }
 
-    private static void validateItemName(String name) {
+    public static void validateItemName(String name) {
         if (name.trim().isEmpty()) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_FORMAT.getMessage());
         }
     }
 
-    private static void validateQuantity(String quantityString) {
+    public static void validateQuantity(String quantityString) {
         try {
             int quantity = Integer.parseInt(quantityString.trim());
             if (quantity <= 0) {
