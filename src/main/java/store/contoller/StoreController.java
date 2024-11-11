@@ -68,6 +68,7 @@ public class StoreController {
 
         for (PurchaseItem purchaseItem : purchaseItems) {
             Product product = productMap.get(purchaseItem.getName());
+            stockManager.validateStock(purchaseItem, product);
             int purchaseTotalPrice = processItem(purchaseItem, product, freeItems);
             nonPromotionTotalPrice += getNonPromotionTotalPrice(product, purchaseTotalPrice);
             totalPrice += purchaseTotalPrice;
