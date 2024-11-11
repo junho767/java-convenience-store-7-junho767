@@ -11,7 +11,7 @@ public class Receipt {
     private final Map<String, PurchaseItem> purchase;
     private final Map<String, PurchaseItem> freeItems;
     private final int membershipDiscountPrice;
-    private final int totalAmount;
+    private int totalAmount;
     private int totalPromotionDiscount;
     private int totalPurchasePrice;
 
@@ -59,6 +59,8 @@ public class Receipt {
     }
 
     private void printPriceDetails(NumberFormat currencyFormat) {
+        totalAmount -= totalPromotionDiscount;
+        totalAmount -= membershipDiscountPrice;
         OutputView.printTotalAmount(totalPurchasePrice,currencyFormat);
         OutputView.printPromotionDiscount(totalPromotionDiscount,currencyFormat);
         OutputView.printMembershipDiscount(membershipDiscountPrice,currencyFormat);
