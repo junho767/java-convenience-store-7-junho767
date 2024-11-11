@@ -54,7 +54,7 @@ public class Product {
 
     public String formatPrice() {
         NumberFormat currencyFormat = NumberFormat.getInstance(Locale.KOREA);
-        return currencyFormat.format(price); // 예: 1,000
+        return currencyFormat.format(price);
     }
 
     @Override

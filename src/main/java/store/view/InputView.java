@@ -5,17 +5,17 @@ import store.message.ViewMessage;
 
 public class InputView {
     public static String readItem() {
-        System.out.println(ViewMessage.INPUT_ITEM_REQUEST);
+        System.out.println(ViewMessage.INPUT_ITEM_REQUEST.getMessage());
         return Console.readLine();
     }
     public static boolean askRetry() {
-        System.out.println(ViewMessage.ASK_RETRY);
+        System.out.println(ViewMessage.ASK_RETRY.getMessage());
         String input = Console.readLine();
         return input.equals("Y") || input.equals("y");
     }
 
     public static boolean askMemberShip() {
-        System.out.println(ViewMessage.MEMBERSHIP_REQUEST);
+        System.out.println(ViewMessage.MEMBERSHIP_REQUEST.getMessage());
         String input = Console.readLine();
         return input.equals("Y") || input.equals("y");
     }
