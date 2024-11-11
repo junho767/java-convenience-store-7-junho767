@@ -10,7 +10,7 @@ public class MembershipDiscount {
         return 0;
     }
 
-    private static int calculateMembershipDiscount(int totalAmount) {
+    public int calculateMembershipDiscount(int totalAmount) {
         int membershipDiscount = (int) (totalAmount * 0.3);
         return Math.min(membershipDiscount, 8000);
     }

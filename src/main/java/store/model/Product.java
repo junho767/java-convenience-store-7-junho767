@@ -32,25 +32,26 @@ public class Product {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
+    public Promotion getPromotion() {
+        return promotion;
     }
 
     public int getPromotionQuantity() {
         return promotionQuantity;
     }
 
-    public int getTotalQuantity(){
+    public int getTotalQuantity() {
         return quantity + promotionQuantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 
     public void setPromotionQuantity(int promotionQuantity) {
         this.promotionQuantity = promotionQuantity;
     }
 
-    public Promotion getPromotion() {
-        return promotion;
-    }
 
     public String formatPrice() {
         NumberFormat currencyFormat = NumberFormat.getInstance(Locale.KOREA);

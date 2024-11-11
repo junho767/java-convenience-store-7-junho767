@@ -6,7 +6,7 @@ public enum Promotion {
     CARBONATED_TWO_PLUS_ONE("탄산2+1", 2, 1, LocalDate.parse("2024-01-01"), LocalDate.parse("2024-12-31")),
     MD_RECOMMENDED("MD추천상품", 1, 1, LocalDate.parse("2024-01-01"), LocalDate.parse("2024-12-31")),
     FLASH_SALE("반짝할인", 1, 1, LocalDate.parse("2024-11-01"), LocalDate.parse("2024-11-30")),
-    NULL(" ",0,0,null,null);
+     NULL(" ", 0, 0, null, null);
 
     private final String name;
     private final int buy;
@@ -34,14 +34,6 @@ public enum Promotion {
         return get;
     }
 
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
     public static Promotion fromString(String promotionName) {
         for (Promotion promo : values()) {
             if (promo.getName().equals(promotionName)) {
@@ -50,6 +42,7 @@ public enum Promotion {
         }
         return NULL;
     }
+
     public boolean isAvailable(LocalDate date) {
         return (startDate == null || !date.isBefore(startDate)) &&
                 (endDate == null || !date.isAfter(endDate));
